@@ -638,5 +638,11 @@ files[settings.FILE] = { version = 1, groundCover = false, rocks = false, trees 
   groundCoverDensity = 'low', viewDistanceMode = 'fixed', viewDistanceKm = 40 }
 local v3 = settings.load()
 T.check(v3.quality == 'custom' or v3.quality == 'low', 'old knobs that match no preset stay theirs')
+-- the GPS "avoid highways" option: off by default, a bool that is kept in the settings file
+T.check(settings.get('gpsAvoidHighways') == false, 'GPS avoid highways: off by default')
+T.check(settings.set('gpsAvoidHighways', true).ok and settings.get('gpsAvoidHighways') == true, 'GPS avoid highways: switched on')
+T.check(settings.load().gpsAvoidHighways == true, 'GPS avoid highways: kept in the settings file')
+T.check(not settings.set('gpsAvoidHighways', 'yes').ok, 'GPS avoid highways: only a bool')
+settings.set('gpsAvoidHighways', false)
 files[settings.FILE] = nil
 T.done('test_settings')

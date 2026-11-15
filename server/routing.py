@@ -22,9 +22,12 @@ ATTRIBUTION = "Routing: OSRM (FOSSGIS), data (c) OpenStreetMap contributors (ODb
 BEARING_RANGE = 60          # degrees either side of the car's heading the start may take
 
 
-def url(lat0, lon0, lat1, lon1, bearing=None):
-    """bearing: the car's heading (compass degrees): the route starts on a road the car can follow that way."""
+def url(lat0, lon0, lat1, lon1, bearing=None, avoid_highways=False):
+    """bearing: the car's heading (compass degrees): the route starts on a road the car can follow that way.
+    avoid_highways: OSRM's exclude=motorway (motorways and their slip roads; trunk roads stay allowed)."""
     u = OSRM_URL.format(lat0=float(lat0), lon0=float(lon0), lat1=float(lat1), lon1=float(lon1))
+    if avoid_highways:
+        u += "&exclude=motorway"
     if bearing is not None:
         u += f"&bearings={int(bearing) % 360},{BEARING_RANGE};"
     return u
@@ -118,14 +121,18 @@ def parse(data):
             "dur": float(r.get("duration") or 0)}
 
 
-def plan(lat0, lon0, lat1, lon1, net=None, bearing=None):
+def plan(lat0, lon0, lat1, lon1, net=None, bearing=None, avoid_highways=False):
     """The road route from (lat0, lon0) to (lat1, lon1) (blocking), starting the way bearing points if it can (else
-    without it). Raises netfetch.FetchError or ValueError."""
+    without it), without motorways when avoid_highways. Raises netfetch.FetchError or ValueError (with
+    avoid_highways, also when the routing server refuses the exclusion or no route exists without motorways: the
+    caller shows the error rather than silently planning a motorway route)."""
     net = net if net is not None else netfetch.default_fetcher()
     if bearing is not None:
         try:
-            return parse(json.loads(net.get(url(lat0, lon0, lat1, lon1, bearing), kind="demand").body.decode("utf-8")))
+            return parse(json.loads(net.get(url(lat0, lon0, lat1, lon1, bearing, avoid_highways),
+                                            kind="demand").body.decode("utf-8")))
         except (ValueError, netfetch.FetchFailed) as e:   # no road that way near the start (OSRM: 400 NoSegment,
             if isinstance(e, netfetch.FetchFailed) and e.status != 400:      # a car across a field): any direction
                 raise
-    return parse(json.loads(net.get(url(lat0, lon0, lat1, lon1), kind="demand").body.decode("utf-8")))
+    return parse(json.loads(net.get(url(lat0, lon0, lat1, lon1, None, avoid_highways),
+                                    kind="demand").body.decode("utf-8")))

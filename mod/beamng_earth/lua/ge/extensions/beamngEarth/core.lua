@@ -3124,7 +3124,7 @@ end
 function M.requestRoute(id, lat0, lon0, lat1, lon1, bearing)
   if not net.isConnected() then return false end
   net.send({ type = 'route', id = id, lat0 = lat0, lon0 = lon0, lat1 = lat1, lon1 = lon1, bearing = bearing,
-    download = settings.get('routeDownload') })
+    download = settings.get('routeDownload'), avoid = settings.get('gpsAvoidHighways') == true or nil })
   return true
 end
 function M.takeRoute(id)

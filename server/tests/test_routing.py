@@ -45,6 +45,29 @@ class RoutingTest(unittest.TestCase):
         self.assertNotIn("bearings", u)
         self.assertTrue(routing.url(39.28, -76.59, 38.9, -77.03, 370).endswith("&bearings=10,60;"))
 
+    def test_url_avoid_highways(self):
+        self.assertNotIn("exclude", routing.url(39.28, -76.59, 38.9, -77.03))
+        u = routing.url(39.28, -76.59, 38.9, -77.03, 370, True)
+        self.assertIn("&exclude=motorway", u)
+        self.assertTrue(u.endswith("&bearings=10,60;"))
+
+    def test_plan_passes_avoid_highways(self):
+        urls = []
+
+        class Body:
+            body = b'{"code": "Ok", "routes": [{"geometry": {"coordinates": [[0, 0], [0.01, 0.01]]}, "distance": 1500, "duration": 120}]}'
+
+        class Net:
+            def get(self, u, kind=None):
+                urls.append(u)
+                return Body()
+
+        r = routing.plan(0, 0, 0.01, 0.01, Net(), None, True)
+        self.assertEqual(r["dist"], 1500.0)
+        self.assertIn("exclude=motorway", urls[0])
+        routing.plan(0, 0, 0.01, 0.01, Net())
+        self.assertNotIn("exclude", urls[1])
+
 
 if __name__ == "__main__":
     unittest.main()

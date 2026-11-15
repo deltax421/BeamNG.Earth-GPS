@@ -63,6 +63,12 @@ local routeVersion = 0
 local routeError = nil
 local pendingId, nextId = nil, 0
 local lastRequest = -math.huge
+local requestedAvoid = nil   -- the "avoid highways" setting the last route request used (a change plans the route again)
+
+local function avoidHighways()
+  local ok, s = pcall(require, 'beamngEarth/settings')
+  return ok and s and s.get and s.get('gpsAvoidHighways') == true or false
+end
 local enu = nil         -- { anchor, x = {}, y = {}, cum = {} } of the route in the current anchor's frame
 local progress = 1      -- index of the route segment the player is on
 local progressS = nil   -- ... and the distance along the route there (routePosition: no jumps to another bend)
@@ -224,6 +230,7 @@ local function requestRoute(player)
   local b = d and M.compass(d.x, d.y)
   if c.requestRoute(nextId, player.lat, player.lon, dest.lat, dest.lon, b) then
     pendingId, lastRequest = nextId, os.clock()
+    requestedAvoid = avoidHighways()
   end
 end
 
@@ -744,6 +751,8 @@ function M.update(anchor, player)
     elseif now - lastRequest > 30 then
       pendingId = nil                      -- no answer: try again below
     end
+  elseif requestedAvoid ~= nil and requestedAvoid ~= avoidHighways() then
+    requestRoute(player)        -- "GPS: avoid highways" was switched: plan the route again the new way
   elseif M.retryRoute(route, now - lastRequest, routeFails) then
     requestRoute(player)
   end
