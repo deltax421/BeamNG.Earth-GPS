@@ -2,6 +2,12 @@
 
 What changed in each release of BeamNG.Earth, newest first.
 
+## 1.9.2 beta (2026-11-15)
+
+- **GPS: avoid highways** (Settings > Interface): the GPS plans its routes without motorways, even if that takes
+  longer. Trunk and main roads stay allowed. Switching it re-plans the current route; if no route exists without
+  motorways the GPS shows an error instead of using one.
+
 ## 1.9.1 beta (2026-11-09)
 
 > **Join the TGForever Discord, [discord.gg/tgf](https://discord.gg/tgf), to chat, get help, report bugs or help
